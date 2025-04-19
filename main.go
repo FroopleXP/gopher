@@ -8,26 +8,20 @@ import (
     "os"
     "strings"
     "strconv"
-    "net/url"
     "bufio"
 )
 
-const GopherServer string = "gopher.quux.org:70"
+// Spec: https://www.rfc-editor.org/rfc/rfc1436
 
 // ET - Element Type
 type ET string
 
 const (
-    ETTextFile       ET = "0"
-    ETGopherSubMenu  ET = "1"
-    ETCCSONameServer ET = "2"
-    ETError          ET = "3"
-    ETBinHex         ET = "4"
-    ETDos            ET = "5"
-    ETUnencFile      ET = "6"
-    ETGopherFTS      ET = "7"
-    ETInfo           ET = "i"
-    ETUnknown        ET = "?" // NOTE: This is not spec-compliant - just our way of denoting a weird type
+    ETFile       ET = "0"
+    ETDirectory  ET = "1"
+    ETError      ET = "3"
+    ETInfo       ET = "i"
+    ETUnknown    ET = "?" // NOTE: This is not spec-compliant - just our way of denoting a weird type
 )
 
 type Element struct {
@@ -36,14 +30,22 @@ type Element struct {
     Selector string
     Host     string
     Port     int
+
+    // External denotes, if an element is a link, if the link is on the same server or another
+    // is is always 'false' if the element is not a link
+    External bool 
+}
+
+func printUsage() {
+    fmt.Print("Usage:\n\tgopher [host] [selector]\n")
 }
 
 func parseET(val rune) ET {
     switch val {
     case '0':
-        return ETTextFile
+        return ETFile
     case '1':
-        return ETGopherSubMenu
+        return ETDirectory
     case 'i':
         return ETInfo
     default:
@@ -72,24 +74,18 @@ func parseLine(line string) (*Element, error) {
     return &e, nil
 }
 
-func getPage(page string, selector string) ([]Element, error) {
+func getPage(host string, selector string) ([]Element, error) {
     selector += "\r\n"
 
     els := make([]Element, 0)
 
-    u, err := url.Parse(page)
-    if err != nil {
-        return els, nil
+    // If there's no ':' present, we assume the user hasn't supplied a port
+    parts := strings.Split(host, ":")
+    if len(parts) < 2 {
+        host += ":70"
     }
 
-    if u.Scheme != "gopher" {
-        return els, fmt.Errorf("invalid url scheme '%s'", u.Scheme)
-    }
-    
-    // TODO: Only default to 70, respect what the user may have put
-    page = u.Host + ":70"
-
-    c, err := net.Dial("tcp", page)
+    c, err := net.Dial("tcp", host)
     if err != nil {
         return els, err
     }
@@ -122,6 +118,8 @@ func getPage(page string, selector string) ([]Element, error) {
             break
         }
 
+        el.External = el.Host == host
+
         els = append(els, *el)
     } 
 
@@ -137,23 +135,25 @@ func printPage(elements []Element) {
         switch el.Type {
         case ETInfo:
             fmt.Println(el.Value)
-            break
-        case ETUnknown:
-            log.Printf("got unknown element type: '%s'\n", el.Type)
-            break
+        case ETFile:
+            fmt.Printf("%s\n", el.Value)
+        case ETDirectory:
+            fmt.Printf("%s...\n", el.Value)
         default:
-            fmt.Printf("%s [%s]\n", el.Value, el.Selector) 
+            fmt.Printf("%s [?]\n", el.Value)
         } 
     }
 }
 
-func main() {
-    if len(os.Args) < 3 {
-        log.Fatalf("invalid arguments")
+func client(args []string) {
+    fmt.Println(args)
+    if len(args) < 2 {
+        fmt.Println("invalid client usage")
+        return
     }
 
-    url := os.Args[1]
-    sel := os.Args[2]
+    url := args[0]
+    sel := args[1]
 
     els, err := getPage(url, sel)
     if err != nil {
@@ -161,4 +161,19 @@ func main() {
     }
 
     printPage(els)
+}
+
+func main() {
+    if len(os.Args) < 2 {
+        log.Fatalf("expected subcommand [client|server]\n")
+    }
+
+    switch os.Args[1] {
+    case "client":
+        client(os.Args[2:])
+    case "server":
+        server(os.Args[2:])
+    default:
+        log.Fatalf("unknown subcommand '%s'\n", os.Args[1])    
+    }
 }
