@@ -4,9 +4,10 @@ import (
     "log"
     "net"
     "flag"
-    "fmt"
     "io"
     "bufio"
+    "path"
+    "os"
 )
 
 func handleClient(c net.Conn) error {
@@ -22,15 +23,50 @@ func handleClient(c net.Conn) error {
         return e
     }
 
-    res := []byte(fmt.Sprintf("iWelcome, '%s'\t%s\t/\t70\n.\r\n", sel, sel))
+    // TODO: Build path relative to the serve directory, being careful not to 
+    // allow a malicious cunt to request a file outside of that directory
+    p := path.Join("./example", string(sel))
 
-    log.Print(string(res))
-    
-    if _, err := c.Write(res); err != nil {
+    s, err := os.Stat(p)
+    if err != nil {
         return err
     }
 
-    return e
+    if s.IsDir() {
+        p = path.Join(p, "gophermap")
+    }
+     
+    file, err := os.Open(p)    
+    if err != nil {
+        return err
+    }
+    defer file.Close()
+
+    r1 := bufio.NewReader(file)
+    w1 := bufio.NewWriter(c)
+
+    var buf []byte = make([]byte, 1024)
+    e = nil 
+        
+    for {
+        n, err := r1.Read(buf)
+        if n > 0 {
+            if _, err := w1.Write(buf[:n]); err != nil {
+                e = err
+                break
+            }
+        }
+        if err == io.EOF {
+            break
+        }
+        e = err
+    }
+
+    if e != nil {
+        return e
+    }
+
+    return w1.Flush()
 }
 
 func server(args []string) {
@@ -55,11 +91,16 @@ func server(args []string) {
             log.Printf("failed to accept client connection: %v\n", err)
             continue
         }
-
+        
+        // TODO: The whole client life-span should be maintained in 'handleClient'
         go func(c net.Conn) {
             if err := handleClient(c); err != nil {
                 log.Printf("failed to handle client: %v\n", err)
                 return
+            }
+
+            if err := c.Close(); err != nil {
+                log.Printf("failed to close client connection: %v\n", err)
             }
         }(c)
     }

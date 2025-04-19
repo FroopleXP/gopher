@@ -95,8 +95,6 @@ func getPage(host string, selector string) ([]Element, error) {
     if err != nil {
         return els, err
     }
-
-    // TODO: Do a flush here? For good measure?
     
     r := bufio.NewReader(c)
     
@@ -111,6 +109,10 @@ func getPage(host string, selector string) ([]Element, error) {
             e = err
             break
         }
+    
+        if len(line) == 0 {
+            continue
+        }
 
         el, err := parseLine(string(line))
         if err != nil {
@@ -123,7 +125,7 @@ func getPage(host string, selector string) ([]Element, error) {
         els = append(els, *el)
     } 
 
-    if err != nil {
+    if e != nil {
         return els, e
     }
 
@@ -146,7 +148,6 @@ func printPage(elements []Element) {
 }
 
 func client(args []string) {
-    fmt.Println(args)
     if len(args) < 2 {
         fmt.Println("invalid client usage")
         return
