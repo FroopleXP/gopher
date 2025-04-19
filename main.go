@@ -174,6 +174,8 @@ func main() {
         client(os.Args[2:])
     case "server":
         server(os.Args[2:])
+    case "proxy":
+        proxy(os.Args[2:])
     default:
         log.Fatalf("unknown subcommand '%s'\n", os.Args[1])    
     }

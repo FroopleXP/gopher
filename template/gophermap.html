@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Gopher HTML Proxy</title>
+    </head>
+    <body>
+        {{ range . }}
+            {{ if eq .Type "i" }}
+            <p>{{ .Value }}</p> 
+            {{ else }}
+            <a href="/{{ .Host }}:{{ .Port }}{{ .Selector }}">{{ .Value }}</a>
+            {{ end }}
+        {{ end }}
+    </body>
+</html>

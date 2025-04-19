@@ -74,7 +74,7 @@ func server(args []string) {
     fServerListener := fs.String("listener", ":70", "listener address")
 
     if err := fs.Parse(args); err != nil {
-        log.Printf("failed to parse server arguments: 5v\n", err)
+        log.Printf("failed to parse server arguments: %v\n", err)
         return
     }
 
