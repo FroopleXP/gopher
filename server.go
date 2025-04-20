@@ -5,10 +5,20 @@ import (
     "net"
     "flag"
     "io"
+    "fmt"
     "bufio"
     "path"
     "os"
 )
+
+
+func writeErrorResponse(w io.Writer, msg string) error {
+    msg = fmt.Sprintf("3%s\t/\t(error)\t0\r\n", msg)
+    if _, err := w.Write([]byte(msg)); err != nil {
+        return err
+    }
+    return nil
+}
 
 func handleClient(c net.Conn) error {
     log.Printf("got new client connection (%s)\n", c.RemoteAddr().String())
@@ -29,7 +39,7 @@ func handleClient(c net.Conn) error {
 
     s, err := os.Stat(p)
     if err != nil {
-        return err
+        return writeErrorResponse(c, fmt.Sprintf("path '%s' does not exist", p))
     }
 
     if s.IsDir() {
@@ -38,7 +48,7 @@ func handleClient(c net.Conn) error {
      
     file, err := os.Open(p)    
     if err != nil {
-        return err
+        return writeErrorResponse(c, fmt.Sprintf("path '%s' could not be opened, please contact the server administrator", p))
     }
     defer file.Close()
 

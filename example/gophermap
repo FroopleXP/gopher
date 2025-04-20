@@ -3,3 +3,9 @@ iWelcome to my Gopher server	fake	(null)	0
 1Utils	/Utils	localhost	70
 1Misc	/Misc	localhost	70
 9Virus.bat	/virus.bat	localhost	70
+0I don't exist	/missing.txt	localhost	70
+iThis is a test Gopher server for the gopher	fake	(null)	0
+iserver written in Golang project	fake	(null)	0
+i	fake	(null)	0
+iHere is a much more content full server	fake	(null)	0
+1Quux	/	gopher.quux.org	70

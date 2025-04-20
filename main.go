@@ -13,20 +13,18 @@ import (
 
 // Spec: https://www.rfc-editor.org/rfc/rfc1436
 
-// ET - Element Type
-type ET string
-
 const (
-    ETFile       ET = "0"
-    ETDirectory  ET = "1"
-    ETError      ET = "3"
-    ETInfo       ET = "i"
-    ETBinary     ET = "9"
-    ETUnknown    ET = "?" // NOTE: This is not spec-compliant - just our way of denoting a weird type
+    ETFile      rune = '0'
+    ETDirectory rune = '1'
+    ETError     rune = '3'
+    ETBinary    rune = '9'
+    ETGif       rune = 'g'
+    ETInfo      rune = 'i'
+    ETUnknown   rune = '?' // NOTE: This is not spec-compliant - just our way of denoting a weird type
 )
 
 type Element struct {
-    Type     ET
+    Type     rune
     Value    string
     Selector string
     Host     string
@@ -41,29 +39,19 @@ func printUsage() {
     fmt.Print("Usage:\n\tgopher [host] [selector]\n")
 }
 
-func parseET(val rune) ET {
-    switch val {
-    case '0':
-        return ETFile
-    case '1':
-        return ETDirectory
-    case '9':
-        return ETBinary
-    case 'i':
-        return ETInfo
-    default:
-        return ETUnknown
-    }
-}
-
 func parseLine(line string) (*Element, error) {
+    // TODO: Don't be too anal about the total parts here, most clients
+    // aren't and it helps when writing the 'gophermenu' files. As some
+    // types don't require a 'selector', 'host' or 'port' such as errors
+    // info etc... it doesn't make sense to force the admin to write
+    // a fake entry for each of these
     parts := strings.Split(line, "\t")
     if len(parts) < 4 {
         return nil, fmt.Errorf("invalid parts in line, got '%d' wanted 4", len(parts))
     }
 
     var e Element    
-    e.Type     = parseET(rune(parts[0][0]))
+    e.Type     = rune(parts[0][0])
     e.Value    = parts[0][1:]
     e.Selector = parts[1]
     e.Host     = parts[2]
@@ -113,7 +101,7 @@ func getPage(host string, selector string) ([]Element, error) {
             break
         }
     
-        if len(line) == 0 {
+        if len(line) == 0 || string(line) == "." {
             continue
         }
 

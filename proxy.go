@@ -42,10 +42,12 @@ func proxy(args []string) {
     log.Printf("proxy starts from %s\n", server)
 
     http.HandleFunc("GET /{url...}", func (w http.ResponseWriter, r *http.Request) {
-		t := r.URL.Query().Get("type")
-		if t == "" {
-			t = "i"
+		typ := r.URL.Query().Get("type")
+		if typ == "" {
+			typ = string(ETDirectory)
 		}
+
+		t := rune(typ[0])
 
         url := r.PathValue("url")
         if url == "" {
@@ -53,6 +55,8 @@ func proxy(args []string) {
             return
         }
 
+		// BUG: If a user requests 'gopher.quux.org:70' without the trailing
+		// '/', this won't work. 
 		host := ""
 		selector := "/"
 
@@ -64,20 +68,16 @@ func proxy(args []string) {
 
 		log.Printf("proxying request to '%s', for selector '%s'\n", host, selector)
 
-		// File
-		if t == "0" {
+		if t == ETFile {
 			w.Header().Set("Content-Type", "text/plain")
-
 			if err := getFile(w, host, selector); err != nil {
 				log.Printf("failed to get file: %v\n", err)
                 w.WriteHeader(503)
                 return
 			}
-
 			return
 
-		// Binary
-		} else if t == "9" {
+		} else if t == ETBinary {
 			binName := path.Base(selector)
 			if binName == "" {
 				binName = "unknown.bin"
@@ -91,26 +91,36 @@ func proxy(args []string) {
                 w.WriteHeader(503)
                 return
 			}
-
 			return
 
-		// Directory
-		} else {
+		} else if t == ETGif {
+			w.Header().Set("Content-Type", "image/gif")
+			if err := getFile(w, host, selector); err != nil {
+				log.Printf("failed to get file: %v\n", err)
+                w.WriteHeader(503)
+                return
+			}
+			return
+
+		} else if t == ETDirectory {
 			els, err := getPage(host, selector)
 			if err != nil {
 				log.Printf("failed to get directory '%s': %v\n", selector, err)
 				w.WriteHeader(503)
 				return
 			}
-		
 			if err := templ.ExecuteTemplate(w, "gophermap.html", els); err != nil {
 				log.Printf("failed to execute template: %v\n", err)
 				w.WriteHeader(500)
 				return
 			}
-
 			return
 		}
+
+		w.WriteHeader(401)
+		log.Printf("got unknown request type '%c'\n", t)
+		return
+
     })
 
     if err := http.ListenAndServe(*fProxyListener, nil); err != nil {

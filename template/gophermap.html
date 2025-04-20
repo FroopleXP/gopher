@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <title>Gopher HTML Proxy</title>
+        <title>Gopher HTTP Proxy</title>
 		<style>
 			body {
 				font-family: "Courier New", "Lucida Console", "Monaco", monospace;
@@ -13,18 +13,37 @@
 			}
 
 			a {
+				text-decoration: none;
+				color: lawngreen;
+			}
+
+			a:hover {
+				cursor: pointer;
 				text-decoration: underline;
-				font-weight: bold;
-				color: green;
+			}
+
+			.info {
+				padding: 1px 0px;
+				margin: 1px 0px;
+			}
+
+			.error {
+				color: red;
 			}
 		</style>
     </head>
     <body>
         {{ range . }}
-            {{ if eq .Type "i" }}
-            <p>{{ .Value }}</p> 
+            {{ if eq .Type 'i' }}
+            <p class="info">{{ if eq (len .Value) 0 }}&nbsp;{{ else }}{{ .Value }}{{ end }}</p> 
+			{{ else if eq .Type '3' }}
+			<p class="error">{{ .Value }}</p>
+			{{ else if eq .Type '0' }}
+			<p class="file">{{ .Value }} [<a href="/{{ .Host }}:{{ .Port }}{{ .Selector }}?type={{ printf "%c" .Type }}">View</a>]</p>
+			{{ else if eq .Type '9' }}
+			<p class="file">{{ .Value }} [<a href="/{{ .Host }}:{{ .Port }}{{ .Selector }}?type={{ printf "%c" .Type }}">Download</a>]</p>
             {{ else }}
-            <a href="/{{ .Host }}:{{ .Port }}{{ .Selector }}?type={{ .Type }}">{{ .Value }}</a><br />
+			<p class="file"><a href="/{{ .Host }}:{{ .Port }}{{ .Selector }}?type={{ printf "%c" .Type }}">{{ .Value }} {{ if .External }}&nearr;{{ end }}</a></p>
             {{ end }}
         {{ end }}
     </body>
