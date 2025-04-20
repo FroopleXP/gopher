@@ -42,8 +42,10 @@
 			<p class="file">{{ .Value }} [<a href="/{{ .Host }}:{{ .Port }}{{ .Selector }}?type={{ printf "%c" .Type }}">View</a>]</p>
 			{{ else if eq .Type '9' }}
 			<p class="file">{{ .Value }} [<a href="/{{ .Host }}:{{ .Port }}{{ .Selector }}?type={{ printf "%c" .Type }}">Download</a>]</p>
-            {{ else }}
+            {{ else if eq .Type '1' }}
 			<p class="file"><a href="/{{ .Host }}:{{ .Port }}{{ .Selector }}?type={{ printf "%c" .Type }}">{{ .Value }} {{ if .External }}&nearr;{{ end }}</a></p>
+            {{ else }}
+			<p class="file" aria-label="Unsupported"><strike>{{ .Value }}</strike></p>
             {{ end }}
         {{ end }}
     </body>

@@ -67,7 +67,8 @@ func proxy(args []string) {
 		}
 
 		log.Printf("proxying request to '%s', for selector '%s'\n", host, selector)
-
+    
+        // TODO: There's lots of duplication here
 		if t == ETFile {
 			w.Header().Set("Content-Type", "text/plain")
 			if err := getFile(w, host, selector); err != nil {

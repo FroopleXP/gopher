@@ -124,71 +124,30 @@ func getPage(host string, selector string) ([]Element, error) {
 }
 
 func getFile(w io.Writer, host string, selector string) error {
-    log.Println("getFile")
-
-    log.Println("connecting to server")
     c, err := net.Dial("tcp", host)
     if err != nil {
         return err
     }
     
-    log.Printf("writing selector '%s' to server\n", selector)
     _, err = c.Write([]byte(selector + "\r\n"))
     if err != nil {
         return err
     }
 
-    log.Println("copying response from server to provided writer")
-    n, err := io.Copy(w, c)
+    _, err = io.Copy(w, c)
     if err != nil {
         return err
     }
 
-    log.Printf("written %d byte(s) to writer\n", n)
-
     return nil
-}
-
-func printPage(elements []Element) {
-    for _, el := range elements {
-        switch el.Type {
-        case ETInfo:
-            fmt.Println(el.Value)
-        case ETFile:
-            fmt.Printf("%s\n", el.Value)
-        case ETDirectory:
-            fmt.Printf("%s...\n", el.Value)
-        default:
-            fmt.Printf("%s [?]\n", el.Value)
-        } 
-    }
-}
-
-func client(args []string) {
-    if len(args) < 2 {
-        fmt.Println("invalid client usage")
-        return
-    }
-
-    url := args[0]
-    sel := args[1]
-
-    els, err := getPage(url, sel)
-    if err != nil {
-        log.Fatalf("failed to get page: %v\n", err)
-    }
-
-    printPage(els)
 }
 
 func main() {
     if len(os.Args) < 2 {
-        log.Fatalf("expected subcommand [client|server]\n")
+        log.Fatalf("expected subcommand [server|proxy]\n")
     }
 
     switch os.Args[1] {
-    case "client":
-        client(os.Args[2:])
     case "server":
         server(os.Args[2:])
     case "proxy":
