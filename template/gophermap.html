@@ -2,13 +2,29 @@
 <html lang="en">
     <head>
         <title>Gopher HTML Proxy</title>
+		<style>
+			body {
+				font-family: "Courier New", "Lucida Console", "Monaco", monospace;
+				font-size: 1.2em;
+				background-color: black;
+				color: #ccc;
+				font-weight: 500;
+				padding: .5rem;
+			}
+
+			a {
+				text-decoration: underline;
+				font-weight: bold;
+				color: green;
+			}
+		</style>
     </head>
     <body>
         {{ range . }}
             {{ if eq .Type "i" }}
             <p>{{ .Value }}</p> 
             {{ else }}
-            <a href="/{{ .Host }}:{{ .Port }}{{ .Selector }}">{{ .Value }}</a>
+            <a href="/{{ .Host }}:{{ .Port }}{{ .Selector }}?type={{ .Type }}">{{ .Value }}</a><br />
             {{ end }}
         {{ end }}
     </body>

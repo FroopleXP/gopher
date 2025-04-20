@@ -21,6 +21,7 @@ const (
     ETDirectory  ET = "1"
     ETError      ET = "3"
     ETInfo       ET = "i"
+    ETBinary     ET = "9"
     ETUnknown    ET = "?" // NOTE: This is not spec-compliant - just our way of denoting a weird type
 )
 
@@ -46,6 +47,8 @@ func parseET(val rune) ET {
         return ETFile
     case '1':
         return ETDirectory
+    case '9':
+        return ETBinary
     case 'i':
         return ETInfo
     default:
@@ -130,6 +133,32 @@ func getPage(host string, selector string) ([]Element, error) {
     }
 
     return els, nil
+}
+
+func getFile(w io.Writer, host string, selector string) error {
+    log.Println("getFile")
+
+    log.Println("connecting to server")
+    c, err := net.Dial("tcp", host)
+    if err != nil {
+        return err
+    }
+    
+    log.Printf("writing selector '%s' to server\n", selector)
+    _, err = c.Write([]byte(selector + "\r\n"))
+    if err != nil {
+        return err
+    }
+
+    log.Println("copying response from server to provided writer")
+    n, err := io.Copy(w, c)
+    if err != nil {
+        return err
+    }
+
+    log.Printf("written %d byte(s) to writer\n", n)
+
+    return nil
 }
 
 func printPage(elements []Element) {

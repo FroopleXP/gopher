@@ -49,14 +49,17 @@ func handleClient(c net.Conn) error {
     e = nil 
         
     for {
+        log.Printf("reading file\n")
         n, err := r1.Read(buf)
         if n > 0 {
+            log.Printf("read %d byte(s) from file\n", n)
             if _, err := w1.Write(buf[:n]); err != nil {
                 e = err
                 break
             }
         }
         if err == io.EOF {
+            log.Printf("reached 'eof' on reading selector '%s'\n", p)
             break
         }
         e = err
@@ -65,6 +68,8 @@ func handleClient(c net.Conn) error {
     if e != nil {
         return e
     }
+
+    log.Printf("writing final flush\n")
 
     return w1.Flush()
 }
